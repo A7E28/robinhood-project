@@ -4,10 +4,10 @@ import schedule
 import subprocess
 
 # Telegram API credentials
-API_ID = app_id
-API_HASH = 'api_hash'
-BOT_TOKEN = 'bot_token'
-CHAT_ID = chat_id
+API_ID = 27024327
+API_HASH = '669bdeddb70a2961aafcad641528aead'
+BOT_TOKEN = '6233443371:AAEMU3svmTajA0wnLEKjQHa4cXmmbwtfFHY'
+CHAT_ID = 1436979843
 
 # IP addresses and their corresponding names
 IP_NAME_MAPPING = {
