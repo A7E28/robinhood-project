@@ -6,8 +6,6 @@ import subprocess
 API_ID = 27024327
 API_HASH = '669bdeddb70a2961aafcad641528aead'
 BOT_TOKEN = '6233443371:AAEMU3svmTajA0wnLEKjQHa4cXmmbwtfFHY'
-
-# Chat ID where the updates will be sent
 CHAT_ID = 1436979843
 
 # IP addresses and their corresponding names
@@ -98,8 +96,14 @@ async def check_and_send_status():
 
 @client.on(events.NewMessage(pattern='/status'))
 async def get_status(event):
+    # Get the current online status of all devices
     await send_online_status()
-    # Do not send offline status here; it will be handled by check_and_send_status()
+
+    # Get the offline status of devices and send them as well
+    offline_devices = [f"{name} ({ip})" for ip, name in IP_NAME_MAPPING.items() if ip in offline_status]
+    if offline_devices:
+        offline_message = "Offline Devices:\n\n" + "\n".join(offline_devices)
+        await client.send_message(CHAT_ID, offline_message)
 
 # Run the client and the check_and_send_status task
 async def main():
