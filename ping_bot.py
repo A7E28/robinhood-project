@@ -1,19 +1,20 @@
 from telethon import TelegramClient, events
 import asyncio
-import schedule
 import subprocess
 
 # Telegram API credentials
 API_ID = 27024327
 API_HASH = '669bdeddb70a2961aafcad641528aead'
 BOT_TOKEN = '6233443371:AAEMU3svmTajA0wnLEKjQHa4cXmmbwtfFHY'
+
+# Chat ID where the updates will be sent
 CHAT_ID = 1436979843
 
 # IP addresses and their corresponding names
 IP_NAME_MAPPING = {
     "8.8.8.8": "Google DNS",
     "192.168.0.1": "Router",
-    "192.168.0.101": "Mobile",
+    "192.168.0.127": "Mobile",
 }
 
 # Initialize the Telegram client
@@ -37,7 +38,6 @@ async def check_status(ip):
     except Exception:
         return None
 
-
 async def send_online_status():
     online_devices = []
     
@@ -54,49 +54,58 @@ async def send_online_status():
         online_message = "Online Devices:\n\n" + "\n".join(online_devices)
         await client.send_message(CHAT_ID, online_message)
 
-
-async def send_offline_status():
+async def send_offline_status(ip):
     offline_devices = []
+    name = IP_NAME_MAPPING.get(ip, "Unknown Device")
     
-    for ip, name in IP_NAME_MAPPING.items():
-        response_time = await check_status(ip)
-        
-        if response_time is None:
-            offline_devices.append(f"{name} ({ip})")
-            offline_status[ip] = True
-            # Remove from online_status if previously online
-            online_status.pop(ip, None)
+    response_time = await check_status(ip)
     
+    if response_time is None:
+        offline_devices.append(f"{name} ({ip})")
+        offline_status[ip] = True
+        # Remove from online_status if previously online
+        online_status.pop(ip, None)
+
     if offline_devices:
         offline_message = "Offline Devices:\n\n" + "\n".join(offline_devices)
         await client.send_message(CHAT_ID, offline_message)
 
+async def check_and_send_status():
+    while True:
+        for ip, name in IP_NAME_MAPPING.items():
+            if ip in online_status:
+                # Device is already marked as online, check if it is still online
+                response_time = await check_status(ip)
+                if response_time is None:
+                    # Device is offline now, send offline status message
+                    await send_offline_status(ip)
+            else:
+                # Device is not marked as online, check if it is online now
+                response_time = await check_status(ip)
+                if response_time is not None:
+                    # Device is online now, send online status message
+                    online_status[ip] = response_time
+                    online_message = f"{name} ({ip}) - Response Time: {response_time} ms"
+                    await client.send_message(CHAT_ID, online_message)
+
+                    # Check if the device was previously offline
+                    if ip in offline_status:
+                        await client.send_message(CHAT_ID, f"{name} ({ip}) is online now.")
+                        # Remove from offline_status since it's online now
+                        offline_status.pop(ip, None)
+        
+        await asyncio.sleep(5)  # Wait for 5 seconds before checking again
 
 @client.on(events.NewMessage(pattern='/status'))
 async def get_status(event):
     await send_online_status()
-    await send_offline_status()
+    # Do not send offline status here; it will be handled by check_and_send_status()
 
-
-async def run_schedule():
-    while True:
-        schedule.run_pending()
-        await asyncio.sleep(1)
-
-
-# Schedule sending online status every 10 seconds
-schedule.every(10).seconds.do(lambda: asyncio.create_task(send_online_status()))
-
-# Schedule sending offline status every 5 seconds
-schedule.every(5).seconds.do(lambda: asyncio.create_task(send_offline_status()))
-
-# Run the client
+# Run the client and the check_and_send_status task
 async def main():
     await client.start()
+    asyncio.create_task(check_and_send_status())  # Start the status checking task
     await client.run_until_disconnected()
 
-
 loop = asyncio.get_event_loop()
-loop.create_task(main())
-loop.create_task(run_schedule())
-loop.run_forever()
+loop.run_until_complete(main())
