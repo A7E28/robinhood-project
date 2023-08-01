@@ -104,6 +104,12 @@ async def get_status(event):
 # Run the client and the check_and_send_status task
 async def main():
     await client.start()
+
+    # Get and send initial status of all devices
+    await send_online_status()
+    for ip in IP_NAME_MAPPING:
+        await send_offline_status(ip)
+
     asyncio.create_task(check_and_send_status())  # Start the status checking task
     await client.run_until_disconnected()
 
