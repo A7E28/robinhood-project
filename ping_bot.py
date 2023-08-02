@@ -1,6 +1,7 @@
 from telethon import TelegramClient, events
 import asyncio
 import subprocess
+from datetime import datetime, timedelta
 
 # Telegram API credentials
 API_ID = 27024327
@@ -23,6 +24,9 @@ online_status = {}
 
 # Dictionary to store the offline status of devices
 offline_status = {}
+
+# Dictionary to store the offline data (offline time and duration) of devices
+offline_data = {ip: {'events': [], 'durations': []} for ip in IP_NAME_MAPPING}
 
 async def check_status(ip):
     try:
@@ -59,6 +63,10 @@ async def send_offline_status(ip):
     response_time = await check_status(ip)
     
     if response_time is None:
+        if ip not in offline_status:
+            # Device was previously online, set offline time
+            offline_data[ip]['events'].append(datetime.now())
+            
         offline_devices.append(f"{name} ({ip})")
         offline_status[ip] = True
         # Remove from online_status if previously online
@@ -67,6 +75,25 @@ async def send_offline_status(ip):
     if offline_devices:
         offline_message = "Offline Devices:\n\n" + "\n".join(offline_devices)
         await client.send_message(CHAT_ID, offline_message)
+
+async def send_offline_data():
+    offline_data_message = "Offline Device Data:\n\n"
+    for ip, data in offline_data.items():
+        name = IP_NAME_MAPPING.get(ip, "Unknown Device")
+        offline_events = data['events']
+        offline_durations = data['durations']
+        
+        for i, offline_time in enumerate(offline_events):
+            duration = datetime.now() - offline_time
+            online_time = offline_time + duration
+            offline_durations.append(duration)
+            offline_data_message += f"{name} ({ip})\n"
+            offline_data_message += f"Offline Time: {offline_time.strftime('%H:%M')}\n"
+            offline_data_message += f"Online Time: {online_time.strftime('%H:%M')}\n"
+            offline_data_message += f"Offline Duration: {str(duration).split('.')[0]}\n\n"
+
+    if offline_data_message != "Offline Device Data:\n\n":
+        await client.send_message(CHAT_ID, offline_data_message)
 
 async def check_and_send_status():
     while True:
@@ -104,6 +131,10 @@ async def get_status(event):
     if offline_devices:
         offline_message = "Offline Devices:\n\n" + "\n".join(offline_devices)
         await client.send_message(CHAT_ID, offline_message)
+
+@client.on(events.NewMessage(pattern='/time'))
+async def get_offline_data(event):
+    await send_offline_data()
 
 # Run the client and the check_and_send_status task
 async def main():
