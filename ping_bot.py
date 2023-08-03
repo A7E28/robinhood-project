@@ -2,6 +2,8 @@ from telethon import TelegramClient, events
 import asyncio
 import subprocess
 from datetime import datetime, timedelta
+import pandas as pd
+import xlsxwriter
 
 # Telegram API credentials
 API_ID = 27024327
@@ -94,6 +96,49 @@ async def send_offline_data():
 
     if offline_data_message != "Offline Device Data:\n\n":
         await client.send_message(CHAT_ID, offline_data_message)
+        
+async def generate_report_sheet():
+    offline_devices_data = []
+    columns = ['Device', 'IP', 'Offline Time', 'Online Time', 'Offline Duration']
+
+    for ip, data in offline_data.items():
+        name = IP_NAME_MAPPING.get(ip, "Unknown Device")
+        offline_events = data['events']
+        offline_durations = data['durations']
+
+        for i, offline_time in enumerate(offline_events):
+            duration = datetime.now() - offline_time
+            online_time = offline_time + duration
+            offline_durations.append(duration)
+
+            offline_devices_data.append([name, ip, offline_time.strftime('%H:%M'), online_time.strftime('%H:%M'), str(duration).split('.')[0]])
+
+    df = pd.DataFrame(offline_devices_data, columns=columns)
+
+    # Create a new Excel workbook using xlsxwriter
+    file_name = "offline_report.xlsx"
+    writer = pd.ExcelWriter(file_name, engine='xlsxwriter')
+    df.to_excel(writer, index=False, sheet_name='Offline Data')
+
+    # Access the underlying XlsxWriter workbook and worksheet
+    workbook  = writer.book
+    sheet = writer.sheets['Offline Data']
+
+    # Adjust column widths for better readability
+    for idx, column in enumerate(df.columns):
+        column_width = max(df[column].astype(str).str.len().max(), len(column))
+        sheet.set_column(idx, idx, column_width + 2)
+
+    # Apply alignment to center the data in cells
+    center_alignment = workbook.add_format({'align': 'center', 'valign': 'vcenter'})
+    for row_num, row_data in enumerate(df.values):
+        for col_num, cell_value in enumerate(row_data):
+            sheet.write(row_num + 1, col_num, cell_value, center_alignment)
+
+    writer.close()  # Save and close the Excel file
+
+    # Send the generated Excel file to the chat
+    await client.send_file(CHAT_ID, file_name)
 
 async def check_and_send_status():
     while True:
@@ -135,6 +180,10 @@ async def get_status(event):
 @client.on(events.NewMessage(pattern='/time'))
 async def get_offline_data(event):
     await send_offline_data()
+
+@client.on(events.NewMessage(pattern='/report_sheet'))
+async def get_report_sheet(event):
+    await generate_report_sheet()
 
 # Run the client and the check_and_send_status task
 async def main():
