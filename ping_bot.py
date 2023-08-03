@@ -1,5 +1,4 @@
-import logging
-from telethon import TelegramClient, events, functions, types
+from telethon import TelegramClient, events
 import asyncio
 import subprocess
 from datetime import datetime, timedelta
@@ -20,17 +19,6 @@ IP_NAME_MAPPING = {
 # Initialize the Telegram client
 client = TelegramClient('status_bot', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
 
-# Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),  # Print logs to the console
-        logging.FileHandler('status_bot.log')  # Save logs to a file
-    ]
-)
-logger = logging.getLogger(__name__)
-
 # Dictionary to store the online status of devices
 online_status = {}
 
@@ -46,13 +34,10 @@ async def check_status(ip):
         response = result.stdout.decode()
         if 'Reply from' in response:
             response_time = int(response.split("time=")[1].split("ms")[0])
-            logger.info(f"Response from {ip}: {response_time} ms")
             return response_time
         else:
-            logger.info(f"No response from {ip}")
             return None
-    except Exception as e:
-        logger.error(f"An error occurred while checking status for {ip}: {e}")
+    except Exception:
         return None
 
 async def send_online_status():
@@ -81,7 +66,6 @@ async def send_offline_status(ip):
         if ip not in offline_status:
             # Device was previously online, set offline time
             offline_data[ip]['events'].append(datetime.now())
-            logger.info(f"{name} ({ip}) is offline now.")
             
         offline_devices.append(f"{name} ({ip})")
         offline_status[ip] = True
@@ -118,14 +102,12 @@ async def check_and_send_status():
                 # Device is already marked as online, check if it is still online
                 response_time = await check_status(ip)
                 if response_time is None:
-                    logger.info(f"{name} ({ip}) is offline now.")
                     # Device is offline now, send offline status message
                     await send_offline_status(ip)
             else:
                 # Device is not marked as online, check if it is online now
                 response_time = await check_status(ip)
                 if response_time is not None:
-                    logger.info(f"{name} ({ip}) is online now. Response Time: {response_time} ms")
                     # Device is online now, send online status message
                     online_status[ip] = response_time
                     online_message = f"{name} ({ip}) - Response Time: {response_time} ms"
@@ -134,7 +116,6 @@ async def check_and_send_status():
                     # Check if the device was previously offline
                     if ip in offline_status:
                         await client.send_message(CHAT_ID, f"{name} ({ip}) is online now.")
-                        logger.info(f"{name} ({ip}) is online now.")
                         # Remove from offline_status since it's online now
                         offline_status.pop(ip, None)
         
@@ -155,20 +136,9 @@ async def get_status(event):
 async def get_offline_data(event):
     await send_offline_data()
 
-# Command to send the log file as a text file
-@client.on(events.NewMessage(pattern='/log'))
-async def send_log(event):
-    try:
-        with open('status_bot.log', 'rb') as file:
-            await client.send_file(event.chat_id, file, caption='Status Bot Log')
-    except Exception as e:
-        await client.send_message(event.chat_id, f"An error occurred while sending the log file: {e}")
-
 # Run the client and the check_and_send_status task
 async def main():
     await client.start()
-
-    logger.info("Status bot started.")
 
     # Get and send initial status of all devices
     await send_online_status()
@@ -180,4 +150,3 @@ async def main():
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(main())
-
