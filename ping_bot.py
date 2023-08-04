@@ -315,8 +315,9 @@ async def restart_bot(event):
     for ip in IP_NAME_MAPPING:
         await send_offline_devices_status(ip)
 
-    # Stop the current status checking task and start a new one
+    # Stop all the task and start a new one
     asyncio.create_task(check_and_send_devices_status())
+    await get_bot_status()
 
 # Run the client and the check_and_send_devices_status task
 async def main():
