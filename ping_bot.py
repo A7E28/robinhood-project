@@ -37,7 +37,11 @@ start_time = None
 # Global variable to store the ping response time
 PING_RESPONSE_TIME = None
 
-async def check_status(ip):
+
+async def ping_ip(ip):
+    """
+    Pings an IP address and returns the response time in milliseconds if successful, else returns None.
+    """
     try:
         result = await asyncio.to_thread(subprocess.run, ['ping', '-n', '1', '-w', '2000', ip], capture_output=True)
         response = result.stdout.decode()
@@ -49,33 +53,41 @@ async def check_status(ip):
     except Exception:
         return None
 
-async def send_online_status():
+
+async def send_online_devices_status():
+    """
+    Checks the online status of devices and sends the list of online devices to the chat.
+    """
     online_devices = []
-    
+
     for ip, name in IP_NAME_MAPPING.items():
-        response_time = await check_status(ip)
-        
+        response_time = await ping_ip(ip)
+
         if response_time is not None:
             online_devices.append(f"{name} ({ip}) - Response Time: {response_time} ms")
             online_status[ip] = response_time
             # Remove from offline_status if previously offline
             offline_status.pop(ip, None)
-    
+
     if online_devices:
         online_message = "Online Devices:\n\n" + "\n".join(online_devices)
         await client.send_message(CHAT_ID, online_message)
 
-async def send_offline_status(ip):
+
+async def send_offline_devices_status(ip):
+    """
+    Checks the offline status of a specific device and sends the offline message to the chat.
+    """
     offline_devices = []
     name = IP_NAME_MAPPING.get(ip, "Unknown Device")
-    
-    response_time = await check_status(ip)
-    
+
+    response_time = await ping_ip(ip)
+
     if response_time is None:
         if ip not in offline_status:
             # Device was previously online, set offline time
             offline_data[ip]['events'].append(datetime.now())
-            
+
         offline_devices.append(f"{name} ({ip})")
         offline_status[ip] = True
         # Remove from online_status if previously online
@@ -85,13 +97,17 @@ async def send_offline_status(ip):
         offline_message = "Offline Devices:\n\n" + "\n".join(offline_devices)
         await client.send_message(CHAT_ID, offline_message)
 
-async def send_offline_data():
+
+async def send_offline_devices_data():
+    """
+    Sends the offline data (offline time and duration) of devices to the chat.
+    """
     offline_data_message = "Offline Device Data:\n\n"
     for ip, data in offline_data.items():
         name = IP_NAME_MAPPING.get(ip, "Unknown Device")
         offline_events = data['events']
         offline_durations = data['durations']
-        
+
         for i, offline_time in enumerate(offline_events):
             duration = datetime.now() - offline_time
             online_time = offline_time + duration
@@ -103,8 +119,12 @@ async def send_offline_data():
 
     if offline_data_message != "Offline Device Data:\n\n":
         await client.send_message(CHAT_ID, offline_data_message)
-        
+
+
 async def generate_report_sheet():
+    """
+    Generates an Excel report sheet containing the offline data (offline time and duration) of devices.
+    """
     offline_devices_data = []
     columns = ['Device', 'IP', 'Offline Time', 'Online Time', 'Offline Duration']
 
@@ -118,7 +138,8 @@ async def generate_report_sheet():
             online_time = offline_time + duration
             offline_durations.append(duration)
 
-            offline_devices_data.append([name, ip, offline_time.strftime('%H:%M'), online_time.strftime('%H:%M'), str(duration).split('.')[0]])
+            offline_devices_data.append(
+                [name, ip, offline_time.strftime('%H:%M'), online_time.strftime('%H:%M'), str(duration).split('.')[0]])
 
     df = pd.DataFrame(offline_devices_data, columns=columns)
 
@@ -128,7 +149,7 @@ async def generate_report_sheet():
     df.to_excel(writer, index=False, sheet_name='Offline Data')
 
     # Access the underlying XlsxWriter workbook and worksheet
-    workbook  = writer.book
+    workbook = writer.book
     sheet = writer.sheets['Offline Data']
 
     # Adjust column widths for better readability
@@ -147,18 +168,22 @@ async def generate_report_sheet():
     # Send the generated Excel file to the chat
     await client.send_file(CHAT_ID, file_name)
 
-async def check_and_send_status():
+
+async def check_and_send_devices_status():
+    """
+    Periodically checks the online status of devices and sends status messages to the chat.
+    """
     while True:
         for ip, name in IP_NAME_MAPPING.items():
             if ip in online_status:
                 # Device is already marked as online, check if it is still online
-                response_time = await check_status(ip)
+                response_time = await ping_ip(ip)
                 if response_time is None:
                     # Device is offline now, send offline status message
-                    await send_offline_status(ip)
+                    await send_offline_devices_status(ip)
             else:
                 # Device is not marked as online, check if it is online now
-                response_time = await check_status(ip)
+                response_time = await ping_ip(ip)
                 if response_time is not None:
                     # Device is online now, send online status message
                     online_status[ip] = response_time
@@ -170,11 +195,14 @@ async def check_and_send_status():
                         await client.send_message(CHAT_ID, f"{name} ({ip}) is online now.")
                         # Remove from offline_status since it's online now
                         offline_status.pop(ip, None)
-        
+
         await asyncio.sleep(5)  # Wait for 5 seconds before checking again
-        
+
 
 async def get_bot_status():
+    """
+    Sends the bot status (CPU usage, RAM usage, uptime, and ping) to the chat.
+    """
     global start_time, PING_RESPONSE_TIME
 
     # Initialize the start time if it's not set
@@ -214,21 +242,25 @@ async def get_bot_status():
             f"Ping: N/A"
         )
     await client.send_message(CHAT_ID, status_message)
-   
+
 
 async def ping_response_handler():
-    # This handler is for the /ping command that the bot sends to itself
+    """
+    Handler for the /ping command that the bot sends to itself to measure the ping response time.
+    """
     global PING_RESPONSE_TIME
     if PING_RESPONSE_TIME is None:
         end_time = datetime.now()
         PING_RESPONSE_TIME = (end_time - start_time).total_seconds() * 1000
 
 
-        
 @client.on(events.NewMessage(pattern='/status'))
 async def get_status(event):
+    """
+    Handler for the /status command to get the current online and offline status of all devices.
+    """
     # Get the current online status of all devices
-    await send_online_status()
+    await send_online_devices_status()
 
     # Get the offline status of devices and send them as well
     offline_devices = [f"{name} ({ip})" for ip, name in IP_NAME_MAPPING.items() if ip in offline_status]
@@ -236,28 +268,41 @@ async def get_status(event):
         offline_message = "Offline Devices:\n\n" + "\n".join(offline_devices)
         await client.send_message(CHAT_ID, offline_message)
 
+
 @client.on(events.NewMessage(pattern='/time'))
 async def get_offline_data(event):
-    await send_offline_data()
+    """
+    Handler for the /time command to get and send the offline data of devices.
+    """
+    await send_offline_devices_data()
+
 
 @client.on(events.NewMessage(pattern='/report_sheet'))
 async def get_report_sheet(event):
+    """
+    Handler for the /report_sheet command to generate and send the Excel report sheet.
+    """
     await generate_report_sheet()
+
 
 @client.on(events.NewMessage(pattern='/bot_status'))
 async def bot_status(event):
+    """
+    Handler for the /bot_status command to get and send the bot status.
+    """
     await get_bot_status()
 
-# Run the client and the check_and_send_status task
+
+# Run the client and the check_and_send_devices_status task
 async def main():
     await client.start()
 
     # Get and send initial status of all devices
-    await send_online_status()
+    await send_online_devices_status()
     for ip in IP_NAME_MAPPING:
-        await send_offline_status(ip)
+        await send_offline_devices_status(ip)
 
-    asyncio.create_task(check_and_send_status())  # Start the status checking task
+    asyncio.create_task(check_and_send_devices_status())  # Start the status checking task
     await client.run_until_disconnected()
 
 
