@@ -253,6 +253,17 @@ async def ping_response_handler():
         end_time = datetime.now()
         PING_RESPONSE_TIME = (end_time - start_time).total_seconds() * 1000
 
+# Function to reset the bot
+def reset_bot():
+    """
+    Resets all dictionaries and variables to their initial state.
+    """
+    global online_status, offline_status, offline_data, start_time, PING_RESPONSE_TIME
+    online_status = {}
+    offline_status = {}
+    offline_data = {ip: {'events': [], 'durations': []} for ip in IP_NAME_MAPPING}
+    start_time = None
+    PING_RESPONSE_TIME = None
 
 @client.on(events.NewMessage(pattern='/status'))
 async def get_status(event):
@@ -292,6 +303,20 @@ async def bot_status(event):
     """
     await get_bot_status()
 
+# Handler for /restart_bot command
+@client.on(events.NewMessage(pattern='/restart_bot'))
+async def restart_bot(event):
+    """
+    Handler for the /restart_bot command to reset the bot.
+    """
+    reset_bot()
+    await client.send_message(CHAT_ID, "Bot has been reset. Starting from the beginning.")
+    await send_online_devices_status()
+    for ip in IP_NAME_MAPPING:
+        await send_offline_devices_status(ip)
+
+    # Stop the current status checking task and start a new one
+    asyncio.create_task(check_and_send_devices_status())
 
 # Run the client and the check_and_send_devices_status task
 async def main():
@@ -301,6 +326,9 @@ async def main():
     await send_online_devices_status()
     for ip in IP_NAME_MAPPING:
         await send_offline_devices_status(ip)
+
+    # Perform a bot status check on the first run
+    await get_bot_status()
 
     asyncio.create_task(check_and_send_devices_status())  # Start the status checking task
     await client.run_until_disconnected()
