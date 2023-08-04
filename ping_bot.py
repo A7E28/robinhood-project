@@ -4,6 +4,7 @@ import subprocess
 from datetime import datetime, timedelta
 import pandas as pd
 import xlsxwriter
+import psutil
 
 # Telegram API credentials
 API_ID = 27024327
@@ -29,6 +30,12 @@ offline_status = {}
 
 # Dictionary to store the offline data (offline time and duration) of devices
 offline_data = {ip: {'events': [], 'durations': []} for ip in IP_NAME_MAPPING}
+
+# Global variable to store the start time of the bot
+start_time = None
+
+# Global variable to store the ping response time
+PING_RESPONSE_TIME = None
 
 async def check_status(ip):
     try:
@@ -165,7 +172,59 @@ async def check_and_send_status():
                         offline_status.pop(ip, None)
         
         await asyncio.sleep(5)  # Wait for 5 seconds before checking again
+        
 
+async def get_bot_status():
+    global start_time, PING_RESPONSE_TIME
+
+    # Initialize the start time if it's not set
+    if start_time is None:
+        start_time = datetime.now()
+
+    # Get system information
+    cpu_usage = psutil.cpu_percent(interval=1)
+    ram_usage = psutil.virtual_memory().percent
+
+    # Get uptime in a human-readable format
+    uptime_seconds = int((datetime.now() - start_time).total_seconds())
+    uptime_str = str(timedelta(seconds=uptime_seconds))
+
+    # Perform an internal ping from Telegram to the bot
+    PING_RESPONSE_TIME = None
+    await client.send_message(CHAT_ID, "Pinging...")
+    start_ping_time = datetime.now()
+    await client.get_me()  # Send a request to Telegram to measure ping
+    end_ping_time = datetime.now()
+    PING_RESPONSE_TIME = (end_ping_time - start_ping_time).total_seconds() * 1000
+
+    if PING_RESPONSE_TIME is not None:
+        status_message = (
+            f"Bot Status:\n\n"
+            f"CPU Usage: {cpu_usage:.1f}%\n"
+            f"RAM Usage: {ram_usage:.1f}%\n"
+            f"Uptime: {uptime_str}\n"
+            f"Ping: {PING_RESPONSE_TIME:.2f} ms"
+        )
+    else:
+        status_message = (
+            f"Bot Status:\n\n"
+            f"CPU Usage: {cpu_usage:.1f}%\n"
+            f"RAM Usage: {ram_usage:.1f}%\n"
+            f"Uptime: {uptime_str}\n"
+            f"Ping: N/A"
+        )
+    await client.send_message(CHAT_ID, status_message)
+   
+
+async def ping_response_handler():
+    # This handler is for the /ping command that the bot sends to itself
+    global PING_RESPONSE_TIME
+    if PING_RESPONSE_TIME is None:
+        end_time = datetime.now()
+        PING_RESPONSE_TIME = (end_time - start_time).total_seconds() * 1000
+
+
+        
 @client.on(events.NewMessage(pattern='/status'))
 async def get_status(event):
     # Get the current online status of all devices
@@ -185,6 +244,10 @@ async def get_offline_data(event):
 async def get_report_sheet(event):
     await generate_report_sheet()
 
+@client.on(events.NewMessage(pattern='/bot_status'))
+async def bot_status(event):
+    await get_bot_status()
+
 # Run the client and the check_and_send_status task
 async def main():
     await client.start()
@@ -196,6 +259,7 @@ async def main():
 
     asyncio.create_task(check_and_send_status())  # Start the status checking task
     await client.run_until_disconnected()
+
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(main())
