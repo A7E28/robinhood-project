@@ -33,9 +33,9 @@ def register_bot_status_feature(client, start_time):
         # Compose the response with the graphical representations
         response = (
             f"Bot Uptime: {uptime_str}\n"
-            f"CPU Usage: {cpu_percent}%\n"
+            f"CPU Usage:\n"
             f"{cpu_progress} {cpu_percent}%\n"
-            f"RAM Usage: {ram_usage}%\n"
+            f"RAM Usage:\n"
             f"{ram_progress} {ram_usage}%\n"
             f"Ping: {ping_time:.2f} ms"
         )
