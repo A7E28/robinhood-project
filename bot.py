@@ -1,6 +1,6 @@
 from telethon import TelegramClient, events
 from telethon import events
-from credentials import API_ID, API_HASH, BOT_TOKEN
+from credentials import API_ID, API_HASH, BOT_TOKEN, CHAT_ID
 import time_feature
 import help
 import start
