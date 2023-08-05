@@ -6,7 +6,7 @@ import help
 import start
 
 # Initialize the Telegram client
-client = TelegramClient('status_bot', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
+client = TelegramClient('bot', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
 
 # Register the time feature with the client
 time_feature.register_time_feature(client)
