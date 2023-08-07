@@ -1,25 +1,31 @@
-from telethon.sync import TelegramClient
-from telethon.sessions import MemorySession
-from telethon import events
+# bot.py
+
+import time
+from telethon import TelegramClient, events
 from credentials import API_ID, API_HASH, BOT_TOKEN
-import time_feature
+import subprocess
 import help
 import start
+import status
+from bot_status import register_bot_status_feature
 
-# Create a TelegramClient with a MemorySession
-client = TelegramClient(MemorySession(), API_ID, API_HASH)
+# Initialize the Telegram client
+client = TelegramClient('bot', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
 
-# Start the client with the bot token
-client.start(bot_token=BOT_TOKEN)
-
-# Register the time feature with the client
-time_feature.register_time_feature(client)
+# Initialize bot start time
+start_time = time.time()
 
 # Register the help feature with the client
 help.register_help_feature(client)
 
 # Register the start feature with the client
 start.register_start_feature(client)
+
+# Register the status feature with the client
+status.register_status_feature(client)
+
+# Register the bot_status feature with the client and pass start_time
+register_bot_status_feature(client, start_time)
 
 # Run the client
 client.run_until_disconnected()
