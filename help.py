@@ -9,6 +9,7 @@ def register_help_feature(client):
             "/start - Start the bot\n"
             "/help - Display this help message\n"
             "/time - Show current date and time"
+            "/bot_status - Show the information of server"
         )
         await event.respond(help_text)
         raise events.StopPropagation
