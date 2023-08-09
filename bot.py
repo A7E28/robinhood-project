@@ -8,6 +8,7 @@ import help
 import start
 import status
 from bot_status import register_bot_status_feature
+import subnet_calculator
 
 # Initialize the Telegram client
 client = TelegramClient('bot', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
@@ -26,6 +27,9 @@ status.register_status_feature(client)
 
 # Register the bot_status feature with the client and pass start_time
 register_bot_status_feature(client, start_time)
+
+# Register the subnet_calculator feature with the client
+subnet_calculator.register_subnet_calculator_feature(client)
 
 # Run the client
 client.run_until_disconnected()
