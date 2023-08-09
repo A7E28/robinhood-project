@@ -1,0 +1,187 @@
+{
+    "8.8.8.8": {
+        "status": "online",
+        "prev_status": "online",
+        "timestamp": 1693319114.8131611
+    },
+    "192.168.10.1": {
+        "status": "online",
+        "prev_status": "online",
+        "timestamp": 1693318805.7463288
+    },
+    "192.168.10.194": {
+        "status": "online",
+        "prev_status": "online",
+        "timestamp": 1693319285.780556
+    },
+    "103.100.95.16": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338066.7658129
+    },
+    "103.100.95.15": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338066.8688412
+    },
+    "103.100.95.17": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338066.9833531
+    },
+    "103.100.95.18": {
+        "status": "offline",
+        "prev_status": null,
+        "timestamp": 1693338148.1973898
+    },
+    "103.100.95.19": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338067.2298286
+    },
+    "103.100.95.25": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338067.375297
+    },
+    "103.100.95.22": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338072.6307194
+    },
+    "103.100.95.23": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338072.7253215
+    },
+    "103.100.95.24": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338072.8282595
+    },
+    "103.100.95.30": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338072.940319
+    },
+    "103.100.95.27": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338073.049326
+    },
+    "103.100.95.29": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338078.2290778
+    },
+    "103.100.95.33": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338078.332166
+    },
+    "103.100.95.37": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338078.4260602
+    },
+    "103.100.95.9": {
+        "status": "offline",
+        "prev_status": null,
+        "timestamp": 1693338148.4173093
+    },
+    "103.100.95.6": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338078.6370544
+    },
+    "103.100.95.36": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338085.8796854
+    },
+    "103.100.95.8": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338085.9793222
+    },
+    "103.100.95.38": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338086.0758235
+    },
+    "103.100.95.43": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338086.1788142
+    },
+    "103.100.95.41": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338086.2860692
+    },
+    "103.100.95.20 & 21": {
+        "status": "offline",
+        "prev_status": null,
+        "timestamp": 1693338127.468946
+    },
+    "103.100.95.10": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338127.5949414
+    },
+    "103.100.95.12": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338148.587738
+    },
+    "103.100.95.26": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338127.8081317
+    },
+    "103.100.95.31": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338127.9270263
+    },
+    "103.100.95.32": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338135.1812809
+    },
+    "103.100.95.34": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338135.2908783
+    },
+    "103.100.95.35": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338135.3887944
+    },
+    "103.100.95.7": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338135.4898689
+    },
+    "103.100.95.39": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338135.6012576
+    },
+    "103.100.95.42": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338142.856519
+    },
+    "103.100.95.40": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338142.9571571
+    },
+    "103.100.95.46": {
+        "status": "online",
+        "prev_status": null,
+        "timestamp": 1693338143.0579123
+    }
+}
