@@ -3,7 +3,6 @@
 import time
 from telethon import TelegramClient, events
 from credentials import API_ID, API_HASH, BOT_TOKEN
-import subprocess
 import help
 import start
 import status
