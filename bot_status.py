@@ -13,8 +13,12 @@ def progress_bar(percentage):
 
 def get_cpu_model():
     try:
-        model_name = subprocess.check_output("lscpu | grep 'Model name' | awk -F ': ' '{print $2}'", shell=True, text=True).strip()
-        return model_name
+        if platform.system() == "Windows":
+            return platform.processor()
+        else:
+            # For Linux or other platforms, use subprocess to call lscpu if available
+            model_name = subprocess.check_output("lscpu | grep 'Model name' | awk -F ': ' '{print $2}'", shell=True, text=True).strip()
+            return model_name
     except Exception as e:
         print("Error getting CPU model:", e)
         return "Unknown CPU"
