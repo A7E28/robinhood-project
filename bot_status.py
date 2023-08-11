@@ -2,7 +2,7 @@ import time
 import psutil
 import platform
 import os
-import cpuinfo
+import subprocess
 from telethon import events
 
 # Function to generate a text-based progress bar
@@ -13,8 +13,8 @@ def progress_bar(percentage):
 
 def get_cpu_model():
     try:
-        info = cpuinfo.get_cpu_info()
-        return info.get('brand_raw', 'Unknown CPU')
+        model_name = subprocess.check_output("lscpu | grep 'Model name' | awk -F ': ' '{print $2}'", shell=True, text=True).strip()
+        return model_name
     except Exception as e:
         print("Error getting CPU model:", e)
         return "Unknown CPU"
@@ -33,10 +33,9 @@ def register_bot_status_feature(client, start_time):
         total_ram = psutil.virtual_memory().total
         total_ram_str = f"🔍 Total RAM: {total_ram // (1024 ** 3)} GB"
 
-        # Get CPU information using py-cpuinfo (for Linux)
+        # Get CPU information
         cpu_model = get_cpu_model()
-
-        cpu_string = f"💻 CPU:  {cpu_model}, {os.cpu_count()} Thread"
+        cpu_string = f"💻 CPU: {cpu_model}, {os.cpu_count()} Thread"
 
         # Get total disk usage
         total_disk = psutil.disk_usage('/').total
