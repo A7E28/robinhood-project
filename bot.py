@@ -2,8 +2,8 @@
 
 import time
 from telethon import TelegramClient, events
-from credentials import API_ID, API_HASH, BOT_TOKEN, CHAT_ID
 import subprocess
+from credentials import API_ID, API_HASH, BOT_TOKEN
 import help
 import start
 from bot_status import register_bot_status_feature
