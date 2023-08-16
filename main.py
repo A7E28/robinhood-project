@@ -1,16 +1,19 @@
-# bot.py
+# main.py
 
 import time
 from telethon import TelegramClient, events
-import subprocess
-from credentials import API_ID, API_HASH, BOT_TOKEN
+from credentials import API_ID, API_HASH, BOT_TOKEN, CHAT_ID
 import help
 import start
+import time_feature
 from bot_status import register_bot_status_feature
 import subnet_calculator
 
 # Initialize the Telegram client
 client = TelegramClient('bot', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
+
+# Register the time feature with the client
+time_feature.register_time_feature(client)
 
 # Initialize bot start time
 start_time = time.time()
