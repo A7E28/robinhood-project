@@ -1,9 +1,7 @@
 import requests
 import json
 from telethon import events
-
-API_KEY = '64cd31157c219d9a000e22b9d9780960'
-API_URL = 'https://api.openweathermap.org/data/2.5/weather'
+from credentials import API_KEY, API_URL
 
 def get_user_location(user_id):
     try:
