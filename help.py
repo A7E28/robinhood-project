@@ -11,6 +11,8 @@ def register_help_feature(client):
             "/time - Show current date and time"
             "/bot_status - Show the information of server"
 	    "/subnet_calculator - this is a subetmask and cidr convert calculator"
+	    "/setlocation (your desired location) - set your location to get wather information on /weather command\n"
+	    "/weather - for weather information of your given location\n"
         )
         await event.respond(help_text)
         raise events.StopPropagation

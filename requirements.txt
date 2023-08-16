@@ -1,3 +1,4 @@
 telethon
 ping3
 psutil
+requests
