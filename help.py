@@ -1,4 +1,3 @@
-#help.py
 from telethon import events
 
 def register_help_feature(client):
@@ -10,11 +9,14 @@ def register_help_feature(client):
             "/help - Display this help message\n"
             "/time - Show current date and time\n"
             "/bot_status - Show the information of server\n"
-            "/all_status - this will check and send status of all the device from device.txt\n"
-            "/status_device(device name or ip) - this will provide the mentioned device in the command\n"
-	    "/subnet_calculator - this is a subnetmask and cidr value converter\n"
-	    "/setlocation (your desired location) - set your location to get wather information on /weather command\n"
-	    "/weather - for weather information of your given location\n"
+            "/all_status - Check and send status of all devices from device.json\n"
+            "/status_device(device name or ip) - Provide the status of the mentioned device\n"
+            "/subnet_calculator - Subnet mask and CIDR value converter\n"
+            "/setlocation (your desired location) - Set your location for weather information\n"
+            "/weather - Get weather information for your set location\n"
+            "/add_device (name), (IP) - Add a new device to the list\n"
+            "/remove_device (name or IP) - Remove a device from the list\n"
+            "/device_list - List all devices in the device.json"
         )
         await event.respond(help_text)
         raise events.StopPropagation
