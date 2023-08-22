@@ -22,15 +22,28 @@ def load_device_info():
 
 def watch_device_json_changes():
     previous_mtime = os.path.getmtime('device.json')
-    
+
     while True:
         current_mtime = os.path.getmtime('device.json')
-        
+
         if current_mtime != previous_mtime:
             print("device.json has changed. Reloading device information.")
-            IP_NAME_MAPPING = load_device_info()
+            new_ip_name_mapping = load_device_info()
+
+            # Remove devices that are no longer in the new mapping
+            for ip in IP_NAME_MAPPING.keys():
+                if ip not in new_ip_name_mapping:
+                    if ip in online_status:
+                        offline_status[ip] = True
+                    offline_data.pop(ip, None)
+                    online_status.pop(ip, None)
+
+            # Update the IP_NAME_MAPPING with the new mapping
+            IP_NAME_MAPPING.clear()
+            IP_NAME_MAPPING.update(new_ip_name_mapping)
+
             previous_mtime = current_mtime
-        
+
         time.sleep(5)  # Wait for 5 seconds before checking again
 
 # Initial loading of device information
