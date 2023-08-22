@@ -8,6 +8,7 @@ import psutil
 import json
 import os
 import time
+from ping3 import ping, verbose_ping
 from credentials import API_ID, API_HASH, BOT_TOKEN, CHAT_ID
 
 # Initialize the Telegram client
@@ -53,7 +54,6 @@ offline_data = {ip: {'events': [], 'durations': []} for ip in IP_NAME_MAPPING}
 # Global variable to store the start time of the bot
 start_time = None
 
-#ping timeout
 MIN_PING_TIMEOUT = 1  # Minimum timeout in seconds
 MAX_PING_TIMEOUT = 5  # Maximum timeout in seconds
 
@@ -62,20 +62,22 @@ async def ping_ip(ip):
     Pings an IP address and returns the response time in milliseconds if successful, else returns None.
     """
     try:
-        result = await asyncio.to_thread(subprocess.run, ['ping', '-n', '1', '-w', '2000', ip], capture_output=True)
-        response = result.stdout.decode()
-        if 'Reply from' in response:
-            response_time = int(response.split("time=")[1].split("ms")[0])
+        response_time = ping(ip, timeout=2)  # Sending an ICMP ping request with a timeout of 2 seconds
+
+        if response_time is not None:
             # Set a dynamic timeout based on response time
             dynamic_timeout = max(MIN_PING_TIMEOUT, min(MAX_PING_TIMEOUT, response_time / 1000))
-            result = await asyncio.to_thread(subprocess.run, ['ping', '-n', '1', '-w', str(int(dynamic_timeout * 1000)), ip], capture_output=True)
-            response = result.stdout.decode()
-            if 'Reply from' in response:
-                response_time = int(response.split("time=")[1].split("ms")[0])
-                return response_time
+
+            # Sending another ping with the dynamic timeout
+            response_time = ping(ip, timeout=dynamic_timeout)
+
+            if response_time is not None:
+                return int(response_time * 1000)  # Convert seconds to milliseconds
+
         return None
     except Exception:
         return None
+
 
 
 
