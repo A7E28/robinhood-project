@@ -2,3 +2,5 @@ telethon
 ping3
 psutil
 requests
+pandas
+xlsxwriter

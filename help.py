@@ -16,7 +16,9 @@ def register_help_feature(client):
             "/weather - Get weather information for your set location\n"
             "/add_device (name), (IP) - Add a new device to the list\n"
             "/remove_device (name or IP) - Remove a device from the list\n"
-            "/device_list - List all devices in the device.json"
+            "/device_list - List all devices in the device.json\n"
+            "/report_sheet - to get a xcell sheet of device down status\n"
+            "//offline_log - to get the offline data of devices in a log style"
         )
         await event.respond(help_text)
         raise events.StopPropagation
