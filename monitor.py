@@ -92,8 +92,6 @@ async def ping_ip(ip):
         return None
 
 
-
-
 async def send_online_devices_status():
     """
     Checks the online status of devices and sends the list of online devices to the chat.
@@ -214,29 +212,38 @@ async def check_and_send_devices_status():
     Periodically checks the online status of devices and sends status messages to the chat.
     """
     while True:
+        tasks = []
+
+        # Dictionary to store updated online/offline status for devices
+        updated_status = {}
+
         for ip, name in IP_NAME_MAPPING.items():
+            response_time = await ping_ip(ip)
             if ip in online_status:
-                # Device is already marked as online, check if it is still online
-                response_time = await ping_ip(ip)
                 if response_time is None:
-                    # Device is offline now, send offline status message
-                    await send_offline_devices_status(ip)
+                    # Device is offline now, mark as offline
+                    updated_status[ip] = False
             else:
-                # Device is not marked as online, check if it is online now
-                response_time = await ping_ip(ip)
                 if response_time is not None:
-                    # Device is online now, send online status message
-                    online_status[ip] = response_time
-                    online_message = f"{name} ({ip}) - Response Time: {response_time} ms"
-                    await client.send_message(CHAT_ID, online_message)
+                    # Device is online now, mark as online
+                    updated_status[ip] = True
 
-                    # Check if the device was previously offline
-                    if ip in offline_status:
-                        await client.send_message(CHAT_ID, f"{name} ({ip}) is online now.")
-                        # Remove from offline_status since it's online now
-                        offline_status.pop(ip, None)
+        # Update the online/offline status for devices
+        for ip, is_online in updated_status.items():
+            if is_online:
+                online_status[ip] = response_time
+            else:
+                offline_status[ip] = True
+                # Remove from online_status since it's offline now
+                online_status.pop(ip, None)
+                tasks.append(send_offline_devices_status(ip))
 
-        await asyncio.sleep(5)  # Wait for 5 seconds before checking again
+        if tasks:
+            await asyncio.gather(*tasks)
+
+        await asyncio.sleep(30)  # Wait for 30 seconds before checking again
+
+
 
 def register_monitor(client):
 
