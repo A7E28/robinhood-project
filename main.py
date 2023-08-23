@@ -11,7 +11,7 @@ from bot_status import register_bot_status_feature
 import subnet_calculator
 import weather
 import location
-import monitor
+import status
 
 # Initialize the Telegram client
 client = TelegramClient('bot', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
@@ -28,9 +28,6 @@ help.register_help_feature(client)
 # Register the start feature with the client
 start.register_start_feature(client)
 
-# Register the status feature with the client
-status.register_status_feature(client)
-
 # Register the bot_status feature with the client and pass start_time
 register_bot_status_feature(client, start_time)
 
@@ -43,8 +40,8 @@ location.register_location_feature(client)
 # Register the weather feature with the client
 weather.register_weather_feature(client)
 
-# Register Monitor featre with the client
-monitor.register_monitor(client)
+# Register status with the client
+status.register_status(client)
 
 # Run the client
 client.run_until_disconnected()

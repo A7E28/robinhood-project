@@ -5,20 +5,19 @@ def register_help_feature(client):
     async def help(event):
         help_text = (
             "List of available commands:\n"
+            "List of available commands:\n"
             "/start - Start the bot\n"
             "/help - Display this help message\n"
             "/time - Show current date and time\n"
             "/bot_status - Show the information of server\n"
-            "/all_status - Check and send status of all devices from device.json\n"
-            "/status_device(device name or ip) - Provide the status of the mentioned device\n"
             "/subnet_calculator - Subnet mask and CIDR value converter\n"
             "/setlocation (your desired location) - Set your location for weather information\n"
             "/weather - Get weather information for your set location\n"
-            "/add_device (name), (IP) - Add a new device to the list\n"
-            "/remove_device (name or IP) - Remove a device from the list\n"
-            "/device_list - List all devices in the device.json\n"
-            "/report_sheet - to get a xcell sheet of device down status\n"
-            "//offline_log - to get the offline data of devices in a log style"
+            "/add_device <name> <ip> - Add a device to monitor\n"
+            "/remove_device <name> - Remove a device from monitoring\n"
+            "/list_device - List all available devices\n"
+            "/offline_log - Get offline data of devices\n"
+            "/report_sheet - Generate an Excel report sheet of offline data\n"
         )
         await event.respond(help_text)
         raise events.StopPropagation
