@@ -5,7 +5,6 @@ def register_help_feature(client):
     async def help(event):
         help_text = (
             "List of available commands:\n"
-            "List of available commands:\n"
             "/start - Start the bot\n"
             "/help - Display this help message\n"
             "/time - Show current date and time\n"

@@ -7,6 +7,8 @@ import pandas as pd
 import xlsxwriter
 import psutil
 import json
+import pytz
+from ping3 import ping, verbose_ping
 from credentials import API_ID, API_HASH, BOT_TOKEN, CHAT_ID
 
 # Initialize the Telegram client
@@ -42,22 +44,34 @@ device_queue = Queue()
 PING_RESPONSE_TIME = None
 
 
+# Global variable to store the start time of the bot
+start_time = None
+
+
+MIN_PING_TIMEOUT = 1  # Minimum timeout in seconds
+MAX_PING_TIMEOUT = 5  # Maximum timeout in seconds
+
 async def ping_ip(ip):
     """
     Pings an IP address and returns the response time in milliseconds if successful, else returns None.
     """
     try:
-        result = await asyncio.to_thread(subprocess.run, ['ping', '-n', '1', '-w', '2000', ip], capture_output=True)
-        response = result.stdout.decode()
-        if 'Reply from' in response:
-            response_time = int(response.split("time=")[1].split("ms")[0])
-            return response_time
-        else:
-            return None
+        response_time = ping(ip, timeout=2)  # Sending an ICMP ping request with a timeout of 2 seconds
+
+        if response_time is not None:
+            # Set a dynamic timeout based on response time
+            dynamic_timeout = max(MIN_PING_TIMEOUT, min(MAX_PING_TIMEOUT, response_time))
+
+            # Sending another ping with the dynamic timeout
+            response_time = ping(ip, timeout=dynamic_timeout)
+
+            if response_time is not None:
+                return int(response_time * 1000)  # Convert seconds to milliseconds
+
+        return None
     except Exception:
         return None
-
-
+        
 async def send_online_devices_status():
     """
     Checks the online status of devices and sends the list of online devices to the chat.
@@ -90,7 +104,8 @@ async def send_offline_devices_status(ip):
     if response_time is None:
         if ip not in offline_status:
             # Device was previously online, set offline time
-            offline_data[ip]['events'].append(datetime.now())
+            dhaka_time = datetime.now(pytz.timezone('Asia/Dhaka'))
+            offline_data[ip]['events'].append(dhaka_time)
 
         offline_devices.append(f"{name} ({ip})")
         offline_status[ip] = True
@@ -113,7 +128,8 @@ async def send_offline_devices_data():
         offline_durations = data['durations']
 
         for i, offline_time in enumerate(offline_events):
-            duration = datetime.now() - offline_time
+            dhaka_time = datetime.now(pytz.timezone('Asia/Dhaka'))
+            duration = dhaka_time - offline_time            
             online_time = offline_time + duration
             offline_durations.append(duration)
             offline_data_message += f"{name} ({ip})\n"
@@ -138,7 +154,8 @@ async def generate_report_sheet():
         offline_durations = data['durations']
 
         for i, offline_time in enumerate(offline_events):
-            duration = datetime.now() - offline_time
+            dhaka_time = datetime.now(pytz.timezone('Asia/Dhaka'))
+            duration = dhaka_time - offline_time
             online_time = offline_time + duration
             offline_durations.append(duration)
 
