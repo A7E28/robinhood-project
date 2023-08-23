@@ -8,6 +8,7 @@ import psutil
 import json
 import os
 import time
+import pytz
 from ping3 import ping, verbose_ping
 from credentials import API_ID, API_HASH, BOT_TOKEN
 
@@ -54,7 +55,7 @@ offline_data = {ip: {'events': [], 'durations': []} for ip in IP_NAME_MAPPING}
 # Global variable to store the start time of the bot
 start_time = None
 
-MIN_PING_TIMEOUT = 1 # Minimum timeout in seconds
+MIN_PING_TIMEOUT = 1  # Minimum timeout in seconds
 MAX_PING_TIMEOUT = 5  # Maximum timeout in seconds
 
 async def ping_ip(ip):
@@ -78,10 +79,8 @@ async def ping_ip(ip):
     except Exception:
         return None
 
-
-
-
 async def send_online_devices_status(event):
+        
     """
     Checks the online status of devices and sends the list of online devices to the chat.
     """
@@ -115,7 +114,8 @@ async def send_offline_devices_status(event, ip):
     if response_time is None:
         if ip not in offline_status:
             # Device was previously online, set offline time
-            offline_data[ip]['events'].append(datetime.now())
+            dhaka_time = datetime.now(pytz.timezone('Asia/Dhaka'))
+            offline_data[ip]['events'].append(dhaka_time)
 
         offline_devices.append(f"{name} ({ip})")
         offline_status[ip] = True
@@ -139,7 +139,8 @@ async def send_offline_devices_data(event):
         offline_durations = data['durations']
 
         for i, offline_time in enumerate(offline_events):
-            duration = datetime.now() - offline_time
+            dhaka_time = datetime.now(pytz.timezone('Asia/Dhaka'))
+            duration = dhaka_time - offline_time            
             online_time = offline_time + duration
             offline_durations.append(duration)
             offline_data_message += f"{name} ({ip})\n"
@@ -165,7 +166,8 @@ async def generate_report_sheet(event):
         offline_durations = data['durations']
 
         for i, offline_time in enumerate(offline_events):
-            duration = datetime.now() - offline_time
+            dhaka_time = datetime.now(pytz.timezone('Asia/Dhaka'))
+            duration = dhaka_time - offline_time
             online_time = offline_time + duration
             offline_durations.append(duration)
 
