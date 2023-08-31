@@ -8,9 +8,9 @@ def register_help_feature(client):
             "List of available commands:\n"
             "/start - Start the bot\n"
             "/help - Display this help message\n"
-            "/time - Show current date and time"
-            "/bot_status - Show the information of server"
-	    "/subnet_calculator - this is a subetmask and cidr convert calculator"
+            "/time - Show current date and time\n"
+            "/bot_status - Show the information of server\n"
+	    "/subnet_calculator - this is a subetmask and cidr convert calculator\n"
 	    "/setlocation (your desired location) - set your location to get wather information on /weather command\n"
 	    "/weather - for weather information of your given location\n"
         )
