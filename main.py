@@ -24,5 +24,9 @@ bot_status.register_bot_status_feature(bot, start_time)
 import time_feature
 time_feature.register_time_feature(bot)
 
+# Register the ping feature with the bot
+from ping import register_ping_feature
+register_ping_feature(bot)
+
 # Polling loop to keep the bot running
 bot.polling(none_stop=True)
