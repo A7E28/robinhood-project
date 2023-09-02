@@ -28,5 +28,9 @@ time_feature.register_time_feature(bot)
 from ping import register_ping_feature
 register_ping_feature(bot)
 
+# Register the traceroute module's feature
+from traceroute import register_traceroute_feature
+register_traceroute_feature(bot)
+
 # Polling loop to keep the bot running
 bot.polling(none_stop=True)

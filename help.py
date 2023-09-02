@@ -8,6 +8,7 @@ def register_help_feature(bot):
             "/start - Start the bot\n"
             "/help - Display this help message\n"
             "/time - Show current date and time\n"
-	    "/ping (host) ({packet number}, by default its 4) - check ping of host"
+	    "/ping (host) ({packet number}, by default its 4) - check ping of host\n"
+	    "/traceroute (host) - to chek tracert/ traceroute result"
         )
         bot.reply_to(message, help_text)
