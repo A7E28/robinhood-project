@@ -16,10 +16,6 @@ help.register_help_feature(bot)
 import start
 start.register_start_feature(bot)
 
-# Register the status feature with the bot
-import status
-status.register_status_feature(bot)
-
 # Register the bot_status feature with the bot and pass start_time
 import bot_status
 bot_status.register_bot_status_feature(bot, start_time)
