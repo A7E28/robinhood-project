@@ -12,11 +12,11 @@ def register_help_feature(client):
             "/subnet_calculator - Subnet mask and CIDR value converter\n"
             "/setlocation (your desired location) - Set your location for weather information\n"
             "/weather - Get weather information for your set location\n"
-            "/add_device <name> <ip> - Add a device to monitor\n"
-            "/remove_device <name> - Remove a device from monitoring\n"
             "/list_device - List all available devices\n"
             "/offline_log - Get offline data of devices\n"
             "/report_sheet - Generate an Excel report sheet of offline data\n"
+	    "/all_status - to check all device status\n"
+	    "/device_status <device name> - to check that specified device status"
         )
         await event.respond(help_text)
         raise events.StopPropagation
