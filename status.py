@@ -1,6 +1,7 @@
 from telethon import TelegramClient, events
 import asyncio
 import subprocess
+from ping3 import ping, verbose_ping
 import platform
 from datetime import datetime, timedelta
 import pandas as pd
@@ -59,50 +60,53 @@ async def ping_ip(ip):
     Pings an IP address and returns the response time in milliseconds if successful, else returns None.
     """
     try:
-        system = platform.system()  # Get the current system (Windows or Linux)
-        
-        if system == "Windows":
-            # For Windows, use the 'ping' command
-            ping_command = ['ping', '-n', '1', '-w', '2000', ip]  # '-n 1' for a single ping, '-w 2000' for a 2-second timeout
-        elif system == "Linux":
-            # For Linux, use the 'ping' command
-            ping_command = ['ping', '-c', '1', '-W', '2', ip]  # '-c 1' for a single ping, '-W 2' for a 2-second timeout
-        else:
-            # Unsupported platform
-            return None
+        response_time = ping(ip, timeout=5)  # Sending an ICMP ping request with a timeout of 2 seconds
 
-        result = subprocess.run(ping_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        
-        if result.returncode == 0 and "time=" in result.stdout:
-            # Parse the response time from the output
-            response_time = float(result.stdout.split("time=")[1].split("ms")[0])
-            return int(response_time)  # Convert seconds to milliseconds
-        else:
-            return None
+        if response_time is not None:
+            # Set a dynamic timeout based on response time
+            dynamic_timeout = max(MIN_PING_TIMEOUT, min(MAX_PING_TIMEOUT, response_time / 1000))
+
+            # Sending another ping with the dynamic timeout
+            response_time = ping(ip, timeout=dynamic_timeout)
+
+            if response_time is not None:
+                return int(response_time * 1000)  # Convert seconds to milliseconds
+
+        return None
     except Exception:
         return None
 
 
 async def send_online_devices_status(event):
-        
     """
     Checks the online status of devices and sends the list of online devices to the chat.
     """
     chat_id = event.chat_id
     online_devices = []
 
-    for ip, name in IP_NAME_MAPPING.items():
-        response_time = await ping_ip(ip)
+    # Create a list to store ping tasks
+    ping_tasks = []
 
-        if response_time is not None:
-            online_devices.append(f"{name} ({ip}) - Response Time: {response_time} ms")
-            online_status[ip] = response_time
-            # Remove from offline_status if previously offline
-            offline_status.pop(ip, None)
+    for ip, name in IP_NAME_MAPPING.items():
+        # Create a ping task for each device
+        ping_tasks.append(check_online_status(ip, name, online_devices))
+
+    # Wait for all ping tasks to complete
+    await asyncio.gather(*ping_tasks)
 
     if online_devices:
         online_message = "Online Devices:\n\n" + "\n".join(online_devices)
         await event.respond(online_message)
+
+# Define a new function to check online status for a device
+async def check_online_status(ip, name, online_devices):
+    response_time = await ping_ip(ip)
+
+    if response_time is not None:
+        online_devices.append(f"{name} ({ip}) - Response Time: {response_time} ms")
+        online_status[ip] = response_time
+        # Remove from offline_status if previously offline
+        offline_status.pop(ip, None)
 
 
 async def send_offline_devices_status(event, ip):
