@@ -1,6 +1,7 @@
 from telethon import TelegramClient, events
 import asyncio
 import subprocess
+import platform
 from datetime import datetime, timedelta
 import pandas as pd
 import xlsxwriter
@@ -9,11 +10,6 @@ import json
 import os
 import time
 import pytz
-from ping3 import ping, verbose_ping
-from credentials import API_ID, API_HASH, BOT_TOKEN
-
-# Initialize the Telegram client
-client = TelegramClient('status_bot', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
 
 # Load initial device information from device.json
 def load_device_info():
@@ -63,21 +59,29 @@ async def ping_ip(ip):
     Pings an IP address and returns the response time in milliseconds if successful, else returns None.
     """
     try:
-        response_time = ping(ip, timeout=2)  # Sending an ICMP ping request with a timeout of 2 seconds
+        system = platform.system()  # Get the current system (Windows or Linux)
+        
+        if system == "Windows":
+            # For Windows, use the 'ping' command
+            ping_command = ['ping', '-n', '1', '-w', '2000', ip]  # '-n 1' for a single ping, '-w 2000' for a 2-second timeout
+        elif system == "Linux":
+            # For Linux, use the 'ping' command
+            ping_command = ['ping', '-c', '1', '-W', '2', ip]  # '-c 1' for a single ping, '-W 2' for a 2-second timeout
+        else:
+            # Unsupported platform
+            return None
 
-        if response_time is not None:
-            # Set a dynamic timeout based on response time
-            dynamic_timeout = max(MIN_PING_TIMEOUT, min(MAX_PING_TIMEOUT, response_time / 1000))
-
-            # Sending another ping with the dynamic timeout
-            response_time = ping(ip, timeout=dynamic_timeout)
-
-            if response_time is not None:
-                return int(response_time * 1000)  # Convert seconds to milliseconds
-
-        return None
+        result = subprocess.run(ping_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        
+        if result.returncode == 0 and "time=" in result.stdout:
+            # Parse the response time from the output
+            response_time = float(result.stdout.split("time=")[1].split("ms")[0])
+            return int(response_time)  # Convert seconds to milliseconds
+        else:
+            return None
     except Exception:
         return None
+
 
 async def send_online_devices_status(event):
         
@@ -211,7 +215,7 @@ async def check_all_devices_status(event):
         status = "Online" if response_time is not None else "Offline"
         status_message += f"{name} ({ip}): {status}\n"
     
-    await client.send_message(chat_id, status_message)
+    await event.respond(status_message)
 
 # Check the status of a specific device by name
 async def check_device_status(event, name):
@@ -222,9 +226,9 @@ async def check_device_status(event, name):
         response_time = await ping_ip(ip)
         status = "Online" if response_time is not None else "Offline"
         status_message = f"{name} ({ip}): {status}"
-        await client.send_message(chat_id, status_message)
+        await event.respond(status_message)
     else:
-        await client.send_message(chat_id, f"Device '{name}' not found.")
+        await event.respond(f"Device '{name}' not found.")
 
 # Function to list all available devices from device.json
 async def list_available_devices(event):
@@ -232,9 +236,9 @@ async def list_available_devices(event):
     available_devices = "\n".join([f"{name} ({ip})" for ip, name in IP_NAME_MAPPING.items()])
     if available_devices:
         devices_message = f"Available Devices:\n\n{available_devices}"
-        await client.send_message(chat_id, devices_message)
+        await event.respond(devices_message)
     else:
-        await client.send_message(chat_id, "No devices available.")
+        await event.respond("No devices available.")
 
 async def check_and_send_devices_status(event):
     """
@@ -325,9 +329,9 @@ def register_status(client):
         raise events.StopPropagation
 
     # Run the client
-    async def main():
+    async def register_status(client):
         await client.start()
         await client.run_until_disconnected()
 
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    loop.run_until_complete(register_status(client))
