@@ -4,7 +4,6 @@ import time
 from telethon import TelegramClient, events
 from credentials import API_ID, API_HASH, BOT_TOKEN, CHAT_ID
 import help
-import start
 import time_feature
 import status
 from bot_status import register_bot_status_feature
@@ -24,9 +23,6 @@ start_time = time.time()
 
 # Register the help feature with the client
 help.register_help_feature(client)
-
-# Register the start feature with the client
-start.register_start_feature(client)
 
 # Register the bot_status feature with the client and pass start_time
 register_bot_status_feature(client, start_time)
