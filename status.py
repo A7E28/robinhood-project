@@ -9,6 +9,7 @@ import pytz
 from datetime import datetime, timedelta
 import pandas as pd
 import xlsxwriter
+import cachetools
 
 # Initialize the chat IDs from a JSON file
 initialized_chats_file = "initialized_chats.json"
@@ -36,11 +37,18 @@ chat_offline_data = {}  # For offline data
 MIN_PING_TIMEOUT = 1  # Minimum timeout in seconds
 MAX_PING_TIMEOUT = 5  # Maximum timeout in seconds
 
+# Initialize a cache with a maximum size
+cache = cachetools.LRUCache(maxsize=100)  # You can adjust the maxsize as needed
+
 async def ping_ip(ip):
     """
     Pings an IP address and returns the response time in milliseconds if successful, else returns None.
     """
     try:
+        # Check if the result is in the cache
+        if ip in cache:
+            return cache[ip]
+
         response_time = ping(ip, timeout=5)  # Sending an ICMP ping request with a timeout of 2 seconds
 
         if response_time is not None:
@@ -51,20 +59,23 @@ async def ping_ip(ip):
             response_time = ping(ip, timeout=dynamic_timeout)
 
             if response_time is not None:
-                return int(response_time * 1000)  # Convert seconds to milliseconds
+                # Cache the result for future use
+                cache[ip] = int(response_time * 1000)  # Convert seconds to milliseconds
+                return cache[ip]
 
         return None
     except Exception:
         return None
 
-# Modify send_online_devices_status function
+
+# send_online_devices_status function
 async def send_online_devices_status(event):
     chat_id = event.chat_id
     online_devices = []
 
     chat_online_status_data = chat_online_status.get(chat_id, {})
     
-    # Modify code to use chat-specific data
+    # code to use chat-specific data
     for ip, name in IP_NAME_MAPPING.items():
         response_time = await ping_ip(ip)
         if response_time is not None:
@@ -80,7 +91,7 @@ async def send_online_devices_status(event):
         online_message = "Online Devices:\n\n" + "\n".join(online_devices)
         await event.respond(online_message)
 
-# Modify send_offline_devices_status function
+# send_offline_devices_status function
 async def send_offline_devices_status(event, ip):
     chat_id = event.chat_id
     offline_devices = []
@@ -103,7 +114,7 @@ async def send_offline_devices_status(event, ip):
         offline_message = "Offline Devices:\n\n" + "\n".join(offline_devices)
         await event.respond(offline_message)
 
-# Modify send_offline_devices_data function
+# send_offline_devices_data function
 async def send_offline_devices_data(event):
     chat_id = event.chat_id
     offline_data_message = "Offline Device Data:\n\n"
@@ -127,7 +138,7 @@ async def send_offline_devices_data(event):
     if offline_data_message != "Offline Device Data:\n\n":
         await event.respond(offline_data_message)
 
-# Modify handle_start_command function
+# handle_start_command function
 async def handle_start_command(event):
     chat_id = event.chat_id
     print(f"Detected chat ID: {chat_id}")
@@ -175,7 +186,7 @@ async def generate_report_sheet(event):
     df = pd.DataFrame(offline_devices_data, columns=columns)
 
     # Create a new Excel workbook using xlsxwriter
-    file_name = f"offline_report_{chat_id}.xlsx"
+    file_name = f"offline_report.xlsx"
     writer = pd.ExcelWriter(file_name, engine='xlsxwriter')
     df.to_excel(writer, index=False, sheet_name='Offline Data')
 
@@ -199,36 +210,75 @@ async def generate_report_sheet(event):
     # Send the generated Excel file to the chat
     await event.respond(file=file_name)
 
-        
+# Check the status of all devices available in device.json
+async def check_all_devices_status(event):
+    chat_id = event.chat_id
+    status_message = "Device Status:\n\n"
+    
+    for ip, name in IP_NAME_MAPPING.items():
+        response_time = await ping_ip(ip)
+        status = "Online" if response_time is not None else "Offline"
+        status_message += f"{name} ({ip}): {status}: {response_time} ms\n"
+    
+    await event.respond(status_message)
 
-# Modify check_and_send_devices_status function
+# Check the status of a specific device by name
+async def check_device_status(event, name):
+    chat_id = event.chat_id
+    ip = next((ip for ip, device_name in IP_NAME_MAPPING.items() if device_name == name), None)
+    
+    if ip:
+        response_time = await ping_ip(ip)
+        status = "Online" if response_time is not None else "Offline"
+        status_message = f"{name} ({ip}): {status}: {response_time} ms"
+        await event.respond(status_message)
+    else:
+        await event.respond(f"Device '{name}' not found.")
+
+# Function to list all available devices from device.json
+async def list_available_devices(event):
+    chat_id = event.chat_id
+    available_devices = "\n".join([f"{name} ({ip})" for ip, name in IP_NAME_MAPPING.items()])
+    if available_devices:
+        devices_message = f"Available Devices:\n\n{available_devices}"
+        await event.respond(devices_message)
+    else:
+        await event.respond("No devices available.")        
+
 async def check_and_send_devices_status(event):
     chat_id = event.chat_id
     print(f"check_and_send_devices_status task started for chat_id: {chat_id}")  # Add this line
-    while True:
-        for ip, name in IP_NAME_MAPPING.items():
-            if ip in chat_online_status.get(chat_id, {}):
-                # Device is already marked as online, check if it is still online
-                response_time = await ping_ip(ip)
-                if response_time is None:
-                    # Device is offline now, send offline status message
-                    await send_offline_devices_status(event, ip)
-            else:
-                # Device is not marked as online, check if it is online now
-                response_time = await ping_ip(ip)
-                if response_time is not None:
-                    # Device is online now, send online status message
-                    online_status_data = chat_online_status.setdefault(chat_id, {})
-                    online_status_data[ip] = response_time
-                    await send_online_status_message(event, name, ip, response_time)
 
-                    # Check if the device was previously offline
-                    if ip in chat_offline_status.get(chat_id, {}):
-                        await send_device_online_notification(event, name, ip)
-                        # Remove from offline_status since it's online now
-                        chat_offline_status.get(chat_id, {}).pop(ip, None)
+    # Create a list of tasks to ping all IP addresses concurrently
+    ping_tasks = [ping_ip(ip) for ip in IP_NAME_MAPPING]
 
-        await asyncio.sleep(60)  # Wait for 5 seconds before checking again
+    # Gather the results concurrently
+    ping_results = await asyncio.gather(*ping_tasks)
+
+    for ip, name in IP_NAME_MAPPING.items():
+        response_time = ping_results.pop(0)  # Get the result corresponding to this IP
+
+        if ip in chat_online_status.get(chat_id, {}):
+            # Device is already marked as online, check if it is still online
+            if response_time is None:
+                # Device is offline now, send offline status message
+                await send_offline_devices_status(event, ip)
+        else:
+            # Device is not marked as online, check if it is online now
+            if response_time is not None:
+                # Device is online now, send online status message
+                online_status_data = chat_online_status.setdefault(chat_id, {})
+                online_status_data[ip] = response_time
+                await send_online_status_message(event, name, ip, response_time)
+
+                # Check if the device was previously offline
+                if ip in chat_offline_status.get(chat_id, {}):
+                    await send_device_online_notification(event, name, ip)
+                    # Remove from offline_status since it's online now
+                    chat_offline_status.get(chat_id, {}).pop(ip, None)
+
+    await asyncio.sleep(5)  # Wait for 5 seconds before checking again
+
 
 async def send_online_status_message(event, name, ip, response_time):
     online_message = f"{name} ({ip}) - Response Time: {response_time} ms"
