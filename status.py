@@ -12,33 +12,23 @@ import os
 import time
 import pytz
 
+# Initialize the chat IDs from a JSON file
+initialized_chats_file = "initialized_chats.json"
+initialized_chats = set()
+
+if os.path.exists(initialized_chats_file):
+    with open(initialized_chats_file, "r") as file:
+        initialized_chats = set(json.load(file))
+        print(f"Chat IDs {initialized_chats} loaded from JSON file.")
+
 # Load initial device information from device.json
 def load_device_info():
     with open('device.json', 'r') as json_file:
         data = json.load(json_file)
     return {device['ip']: device['name'] for device in data['devices']}
 
-def watch_device_json_changes():
-    previous_mtime = os.path.getmtime('device.json')
-    
-    while True:
-        current_mtime = os.path.getmtime('device.json')
-        
-        if current_mtime != previous_mtime:
-            print("device.json has changed. Reloading device information.")
-            IP_NAME_MAPPING = load_device_info()
-            previous_mtime = current_mtime
-        
-        time.sleep(5)  # Wait for 5 seconds before checking again
-
 # Initial loading of device information
 IP_NAME_MAPPING = load_device_info()
-
-# Start a separate thread to watch for device.json changes
-import threading
-watch_thread = threading.Thread(target=watch_device_json_changes)
-watch_thread.start()
-
 
 # Dictionary to store the online status of devices
 online_status = {}
@@ -48,9 +38,6 @@ offline_status = {}
 
 # Dictionary to store the offline data (offline time and duration) of devices
 offline_data = {ip: {'events': [], 'durations': []} for ip in IP_NAME_MAPPING}
-
-# Global variable to store the start time of the bot
-start_time = None
 
 MIN_PING_TIMEOUT = 1  # Minimum timeout in seconds
 MAX_PING_TIMEOUT = 5  # Maximum timeout in seconds
@@ -312,26 +299,41 @@ def register_status(client):
     async def list_device_command(event):
         await list_available_devices(event)
 
-    # Define a new function to handle the /start command
+
     async def handle_start_command(event):
         """
         Handler for the /start command to start the monitoring task.
         """
-        # Get and send initial status of all devices
-        await send_online_devices_status(event)
-        for ip in IP_NAME_MAPPING:
-            await send_offline_devices_status(event, ip)
+        chat_id = event.chat_id
+        print(f"Detected chat ID: {chat_id}")
 
-        # Start the status checking task for the specific chat where /start was sent
-        await check_and_send_devices_status(event)
+        if chat_id in initialized_chats:
+            print(f"Chat ID {chat_id} is already initialized.")
+            await event.respond("Monitoring is already running.")
+        else:
+            print(f"Chat ID {chat_id} is being initialized.")
+            # Save the chat ID to the set and JSON file
+            initialized_chats.add(chat_id)
+            with open(initialized_chats_file, "w") as file:
+                json.dump(list(initialized_chats), file)
+                print(f" chat id is saved")
+            
+            # Continue with the initialization logic
+            await send_online_devices_status(event)
+            for ip in IP_NAME_MAPPING:
+                await send_offline_devices_status(event, ip)
 
-    # Update the event handler for the /start command to call handle_start_command
-    @client.on(events.NewMessage(pattern='/start'))
-    async def start(event):
-        await event.respond("Hello! I am your Telegram bot And device monitoring has been started")
-        await handle_start_command(event)
+            await check_and_send_devices_status(event)
+
         raise events.StopPropagation
 
+    # Your event handler for /start
+    @client.on(events.NewMessage(pattern='/start'))
+    async def start(event):
+        chat_id = event.chat_id
+        await event.respond("Hello! I am your Telegram bot. Device monitoring has been started.")
+        await handle_start_command(event)
+            
     # Run the client
     async def register_status(client):
         await client.start()

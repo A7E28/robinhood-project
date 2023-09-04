@@ -3,3 +3,5 @@ __pycache__/
 bot.session
 bot.session-journal
 status_bot.*
+initialized_chats.json
+offline_report*
