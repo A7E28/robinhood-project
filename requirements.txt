@@ -5,3 +5,4 @@ requests
 pandas
 xlsxwriter
 cachetools
+schedule

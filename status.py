@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import xlsxwriter
 import cachetools
+import schedule
 
 # Initialize the chat IDs from a JSON file
 initialized_chats_file = "initialized_chats.json"
@@ -324,19 +325,31 @@ def register_status(client):
     @client.on(events.NewMessage(pattern='/list_device'))
     async def list_device_command(event):
         await list_available_devices(event)
-    
-    # Your event handler for /start
+
+    # event handler for /start
     @client.on(events.NewMessage(pattern='/start'))
     async def start(event):
         chat_id = event.chat_id
         await event.respond("Hello! I am your Telegram bot. Device monitoring has been started.")
         await handle_start_command(event)
+        
+        # Schedule the all_status command to run daily at 10 am
+        schedule.every().day.at("10:00").do(send_all_status_command, event)
+
         raise events.StopPropagation
-            
+
+    # Function to send the /all_status command
+    async def send_all_status_command(event):
+        await check_all_devices_status(event)
+
     # Run the client
     async def register_status(client):
         await client.start()
-        await client.run_until_disconnected()
+        
+        # Run the scheduled jobs in the background
+        while True:
+            schedule.run_pending()
+            await asyncio.sleep(1)
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(register_status(client))
