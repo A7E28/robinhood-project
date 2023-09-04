@@ -13,7 +13,7 @@ import location
 import status
 
 # Initialize the Telegram client
-client = TelegramClient('bot', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
+client = TelegramClient(None, API_ID, API_HASH).start(bot_token=BOT_TOKEN)
 
 # Register the time feature with the client
 time_feature.register_time_feature(client)
