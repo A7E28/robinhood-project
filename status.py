@@ -230,6 +230,31 @@ async def list_available_devices(event):
         await event.respond(devices_message)
     else:
         await event.respond("No devices available.")
+        
+        
+async def handle_start_command(event):
+    """
+    Handler for the /start command to start the monitoring task.
+    """
+    chat_id = event.chat_id
+    print(f"Detected chat ID: {chat_id}")
+
+    if chat_id in initialized_chats:
+        print(f"Chat ID {chat_id} is already initialized.")
+        await event.respond("Monitoring is already running.")
+    else:
+        print(f"Chat ID {chat_id} is being initialized.")
+        # Save the chat ID to the set and JSON file
+        initialized_chats.add(chat_id)
+        with open(initialized_chats_file, "w") as file:
+            json.dump(list(initialized_chats), file)
+            print(f" chat id is saved")
+            
+        # Continue with the initialization logic
+        await send_online_devices_status(event)
+        for ip in IP_NAME_MAPPING:
+            await send_offline_devices_status(event, ip)
+        await check_and_send_devices_status(event)  # Moved this line here   
 
 async def check_and_send_devices_status(event):
     """
@@ -298,41 +323,14 @@ def register_status(client):
     @client.on(events.NewMessage(pattern='/list_device'))
     async def list_device_command(event):
         await list_available_devices(event)
-
-
-    async def handle_start_command(event):
-        """
-        Handler for the /start command to start the monitoring task.
-        """
-        chat_id = event.chat_id
-        print(f"Detected chat ID: {chat_id}")
-
-        if chat_id in initialized_chats:
-            print(f"Chat ID {chat_id} is already initialized.")
-            await event.respond("Monitoring is already running.")
-        else:
-            print(f"Chat ID {chat_id} is being initialized.")
-            # Save the chat ID to the set and JSON file
-            initialized_chats.add(chat_id)
-            with open(initialized_chats_file, "w") as file:
-                json.dump(list(initialized_chats), file)
-                print(f" chat id is saved")
-            
-            # Continue with the initialization logic
-            await send_online_devices_status(event)
-            for ip in IP_NAME_MAPPING:
-                await send_offline_devices_status(event, ip)
-
-            await check_and_send_devices_status(event)
-
-        raise events.StopPropagation
-
+    
     # Your event handler for /start
     @client.on(events.NewMessage(pattern='/start'))
     async def start(event):
         chat_id = event.chat_id
         await event.respond("Hello! I am your Telegram bot. Device monitoring has been started.")
         await handle_start_command(event)
+        raise events.StopPropagation
             
     # Run the client
     async def register_status(client):
