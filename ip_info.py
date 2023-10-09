@@ -96,6 +96,18 @@ def get_domain_info(domain):
         'name_servers': name_servers
     }
 
+
+# Function to retrieve location information
+def get_location_info(result):
+    location_info = result.get('city', result.get('asn_country_code', 'N/A'))
+    return location_info
+    
+# Function to perform IP WHOIS lookup
+def lookup_ip_info(ip_address):
+    obj = ipwhois.IPWhois(ip_address)
+    result = obj.lookup_rdap()
+    return result  
+
 # Function to format IP information
 def format_ip_info(result, query):
     info_message = f"Information for {query}:\n\n"
@@ -113,13 +125,10 @@ def format_ip_info(result, query):
     info_message += f"IP Version: {result['network']['ip_version']}\n"
     info_message += f"Allocated Date: {result['asn_date']}\n"
     info_message += f"IP Type: {result['network']['type']}\n"
+    info_message += f"AS Number: {result['asn']}\n"
+
     
     return info_message
-
-# Function to retrieve location information
-def get_location_info(result):
-    location_info = result.get('city', result.get('asn_country_code', 'N/A'))
-    return location_info
 
 # Register the /ip_info command handler with the client
 def register_ip_info_feature(client):
