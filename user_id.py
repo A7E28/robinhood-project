@@ -32,7 +32,7 @@ def remove_user(user_id, group_name):
 # Function to save user group data to user_id.json file
 def save_user_groups():
     with open("user_id.json", "w") as file:
-        json.dump(user_groups, file)
+        json.dump(user_groups, file, indent=4) 
 
 # Function to load user group data from user_id.json file
 def load_user_groups():
