@@ -11,10 +11,14 @@ import subnet_calculator
 import weather
 import location
 import ip_info
-import mac_identifier
+import mac_identifier 
+import user_id
 
 # Initialize the Telegram client
 client = TelegramClient('bot', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
+
+# Load user group data when the bot starts
+user_id.load_user_groups()
 
 # Register the time feature with the client
 time_feature.register_time_feature(client)
@@ -46,6 +50,8 @@ ip_info.register_ip_info_feature(client)
 # Register the mac_info feature with the client
 mac_identifier.register_mac_info_feature(client)
 
+#register the user_id
+user_id.register_user_id_feature(client)
 
 # Run the client
 client.run_until_disconnected()

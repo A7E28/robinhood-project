@@ -2,54 +2,80 @@ import socket
 import ipwhois
 import whois
 from telethon import events
+import json
+
+# Define a function to check if a user is in the specified group
+def is_user_in_group(user_id, group_name):
+    user_groups = load_user_groups()  # Load user group data every time
+    if group_name in user_groups:
+        return user_id in user_groups[group_name]
+    return False
+
+# Load user group data from user_id.json file
+def load_user_groups():
+    try:
+        with open("user_id.json", "r") as file:
+            data = json.load(file)
+            if isinstance(data, dict):
+                return data
+    except FileNotFoundError:
+        return {}
 
 # Define a function to handle the /ip_info command
 async def ip_info_command(event):
-    # Get the user's input (the IP address or domain name)
-    user_input = event.text.split(" ", 1)
-    
-    if len(user_input) != 2:
-        await event.reply("Please provide an IP address or domain name.")
-        return
-    
-    query = user_input[1].strip()
-    
-    try:
-        is_ip_address, ip_address = is_valid_ip(query)
+    user_id = event.sender_id
+    # Check if the user is in any group listed in user_id.json
+    user_groups = load_user_groups()
+    if any(is_user_in_group(user_id, group_name) for group_name in user_groups):      
+        # Get the user's input (the IP address or domain name)
+        user_input = event.text.split(" ", 1)
         
-        if is_ip_address:
-            result = lookup_ip_info(ip_address)
-            info_message = format_ip_info(result, query)
-        else:
-            ip_address = resolve_domain(query)
-            
-            if not ip_address:
-                await event.reply(f"Failed to resolve the domain: {query}")
-                return
-            
-            result = lookup_ip_info(ip_address)
-            info_message = format_ip_info(result, ip_address)
-            
-            # Reverse DNS Lookup
-            hostname = reverse_dns_lookup(ip_address)
-            info_message += f"Reverse DNS: {hostname}\n"
-            
-            domain_info = get_domain_info(query)
-            
-            info_message += f"Registrar: {domain_info['registrar']}\n"
-            info_message += f"Creation Date: {domain_info['creation_date']}\n"
-            info_message += f"Expiration Date: {domain_info['expiration_date']}\n"
-            info_message += f"Name Servers: {', '.join(domain_info['name_servers'])}\n"
+        if len(user_input) != 2:
+            await event.reply("Please provide an IP address or domain name.")
+            return
         
-        # Add location information
-        location_info = get_location_info(result)
-        info_message += f"Location: {location_info}\n"
+        query = user_input[1].strip()
         
-        await event.reply(info_message)
-    except ipwhois.exceptions.IPDefinedError:
-        await event.reply("Invalid IP address or domain name.")
-    except Exception as e:
-        await event.reply(f"An error occurred: {str(e)}")
+        try:
+            is_ip_address, ip_address = is_valid_ip(query)
+            
+            if is_ip_address:
+                result = lookup_ip_info(ip_address)
+                info_message = format_ip_info(result, query)
+            else:
+                ip_address = resolve_domain(query)
+                
+                if not ip_address:
+                    await event.reply(f"Failed to resolve the domain: {query}")
+                    return
+                
+                result = lookup_ip_info(ip_address)
+                info_message = format_ip_info(result, ip_address)
+                
+                # Reverse DNS Lookup
+                hostname = reverse_dns_lookup(ip_address)
+                info_message += f"Reverse DNS: {hostname}\n"
+                
+                domain_info = get_domain_info(query)
+                
+                info_message += f"Registrar: {domain_info['registrar']}\n"
+                info_message += f"Creation Date: {domain_info['creation_date']}\n"
+                info_message += f"Expiration Date: {domain_info['expiration_date']}\n"
+                info_message += f"Name Servers: {', '.join(domain_info['name_servers'])}\n"
+            
+            # Add location information
+            location_info = get_location_info(result)
+            info_message += f"Location: {location_info}\n"
+            
+            await event.reply(info_message)
+        except ipwhois.exceptions.IPDefinedError:
+            await event.reply("Invalid IP address or domain name.")
+        except Exception as e:
+            await event.reply(f"An error occurred: {str(e)}")
+            
+    else:
+        await event.respond("You do not have access to this command.")    
+            
 
 # Function to check if the input is a valid IP address
 def is_valid_ip(input_str):

@@ -2,6 +2,24 @@
 
 import ipaddress
 from telethon import events, Button
+import json
+
+# Define a function to check if a user is in the specified group
+def is_user_in_group(user_id, group_name):
+    user_groups = load_user_groups()  # Load user group data every time
+    if group_name in user_groups:
+        return user_id in user_groups[group_name]
+    return False
+
+# Load user group data from user_id.json file
+def load_user_groups():
+    try:
+        with open("user_id.json", "r") as file:
+            data = json.load(file)
+            if isinstance(data, dict):
+                return data
+    except FileNotFoundError:
+        return {}
 
 # Function to calculate subnet information
 def calculate_subnet_info(ip_address, subnet_mask):
@@ -39,18 +57,24 @@ user_states = {}
 def register_subnet_calculator_feature(client):
     @client.on(events.NewMessage(pattern='/subnet_calculator'))
     async def subnet_calculator(event):
-        buttons = [
-            [Button.inline("Calculate Subnet", data="calculate")],
-            [Button.inline("CIDR to Subnet", data="cidr2subnet")],
-            [Button.inline("Subnet to CIDR", data="subnet2cidr")]
-        ]
+        user_id = event.sender_id
+        # Check if the user is in any group listed in user_id.json
+        user_groups = load_user_groups()
+        if any(is_user_in_group(user_id, group_name) for group_name in user_groups):
+            buttons = [
+                [Button.inline("Calculate Subnet", data="calculate")],
+                [Button.inline("CIDR to Subnet", data="cidr2subnet")],
+                [Button.inline("Subnet to CIDR", data="subnet2cidr")]
+            ]
+            
+            await event.respond(
+                "Choose an action:",
+                buttons=buttons,  # Add buttons here
+                reply_to=event.message.id
+            )
+        else:
+            await event.respond("You do not have access to this command.")
         
-        await event.respond(
-            "Choose an action:",
-            buttons=buttons,  # Add buttons here
-            reply_to=event.message.id
-        )
-
     @client.on(events.CallbackQuery(pattern=b'calculate'))
     async def calculate_action(event):
         user_id = event.sender_id
