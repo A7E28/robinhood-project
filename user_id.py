@@ -4,7 +4,6 @@ from telethon import events, utils
 # Define the dictionary to store user groups
 user_groups = {
     "admin": [],
-    "moderator": [],
     "user": [],
 }
 
