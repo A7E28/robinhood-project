@@ -14,6 +14,7 @@ def register_help_feature(client):
             "/setlocation (your desired location) - set your location to get wather information on /weather command\n"
             "/weather - for weather information of your given location\n"
             "/ip_info - for getting information of a ip or domain\n"
+            "/mac_info - for getting mac/ vendor information\n"
         )
         await event.respond(help_text)
         raise events.StopPropagation
