@@ -15,6 +15,7 @@ def register_help_feature(client):
             "/weather - for weather information of your given location\n"
             "/ip_info - for getting information of a ip or domain\n"
             "/mac_info - for getting mac/ vendor information\n"
+            "/ping - for ping a ip or domain, -t for ping count\n"
         )
         await event.respond(help_text)
         raise events.StopPropagation

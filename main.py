@@ -13,6 +13,7 @@ import location
 import ip_info
 import mac_identifier 
 import user_id
+import ping
 
 # Initialize the Telegram client
 client = TelegramClient('bot', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
@@ -52,6 +53,9 @@ mac_identifier.register_mac_info_feature(client)
 
 #register the user_id
 user_id.register_user_id_feature(client)
+
+#register ping feature
+ping.register_ping_feature(client)
 
 # Run the client
 client.run_until_disconnected()
