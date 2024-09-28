@@ -1,0 +1,7 @@
+python-telegram-bot
+pytube
+youtube-search-python
+requests
+psutil
+yt-dlp
+speedtest-cli
