@@ -120,6 +120,9 @@ async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def reboot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not command_states['speedtest']:
+        await update.message.reply_text("The speedtest command is currently disabled.")
+        return    
     await context.bot.send_message(chat_id=update.effective_chat.id, text="Rebooting bot... Please wait...")
 
     # Use subprocess to start a new process

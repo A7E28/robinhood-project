@@ -6,6 +6,7 @@ command_states = {
     'speedtest': True,
     'ping': True,
     'music': True,
+    'reboot': True
 }
 
 async def enable_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
