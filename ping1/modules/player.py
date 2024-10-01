@@ -3,7 +3,7 @@ import time
 import yt_dlp
 from telegram import Update
 from telegram.ext import ContextTypes
-from comm_checker import command_states
+from ping1.modules.comm_checker import command_states
 
 async def play_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not command_states['music']:

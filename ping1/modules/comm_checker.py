@@ -1,6 +1,6 @@
 from telegram import Update
 from telegram.ext import ContextTypes
-from config import ADMIN_CHAT_ID  # Import admin chat ID
+from ping1.modules.helper.restricted import boss
 
 command_states = {
     'speedtest': True,
@@ -9,11 +9,8 @@ command_states = {
     'reboot': True
 }
 
+@boss
 async def enable_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if update.effective_user.id != ADMIN_CHAT_ID:  # Check user ID instead
-        await context.bot.send_message(chat_id=update.effective_chat.id, text="You don't have permission to use this command.")
-        return
-
     if len(context.args) != 1:
         await context.bot.send_message(chat_id=update.effective_chat.id, text='Usage: /enable <command>')
         return
@@ -26,11 +23,8 @@ async def enable_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Command '{command}' not found.")
 
+@boss
 async def disable_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if update.effective_user.id != ADMIN_CHAT_ID:  # Check user ID instead
-        await context.bot.send_message(chat_id=update.effective_chat.id, text="You don't have permission to use this command.")
-        return
-
     if len(context.args) != 1:
         await context.bot.send_message(chat_id=update.effective_chat.id, text='Usage: /disable <command>')
         return

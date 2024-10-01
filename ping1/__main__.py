@@ -1,17 +1,17 @@
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-from hello import bot_start
-from subcal import subnet
-from help import help
-from systemstatus import bot_status, system_status, speedtest, ping, reboot
-from comm_checker import enable_command, disable_command
-from player import play_audio
+
+from telegram.ext import ApplicationBuilder, CommandHandler
+from ping1.modules.hello import bot_start
+from ping1.modules.subcal import subnet
+from ping1.modules.help import help
+from ping1.modules.systemstatus import bot_status, system_status, speedtest, ping, reboot
+from ping1.modules.comm_checker import enable_command, disable_command
+from ping1.modules.player import play_audio
 
 
-from config import BOT_TOKEN, ADMIN_CHAT_ID
+from ping1 import token, LOGGER
 
 def main() -> None:
-    application = ApplicationBuilder().token(BOT_TOKEN).build()
+    application = ApplicationBuilder().token(token).build()
     
     
     
@@ -31,6 +31,7 @@ def main() -> None:
   
 
     # Run the bot
+    LOGGER.info("\nBOT started..")
     application.run_polling()
 
        

@@ -6,7 +6,7 @@ import speedtest as speedtest_lib  # Renamed the imported speedtest library
 import subprocess
 import os
 import sys
-from comm_checker import command_states
+from ping1.modules.comm_checker import command_states
 
 # Global variable to keep track of bot start time
 bot_start_time = time.time()
