@@ -1,7 +1,7 @@
-python-telegram-bot
-pytube
+python-telegram-bot[all]==21.6
+pytube==15.0.0
 youtube-search-python
-requests
-psutil
-yt-dlp
-speedtest-cli
+requests==2.32.2
+psutil==5.9.8
+yt-dlp==2024.8.6
+speedtest-cli==2.1.3
